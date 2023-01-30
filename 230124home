@@ -1,0 +1,10 @@
+-- Напишите запрос (в рамках "песочницы"), который покажет заказы клиентов из США. 
+-- Поля:
+-- ID заказа
+-- имя клиента
+-- название компании-перевозчика (shippers)
+
+SELECT O.OrderID, C.CustomerName, S.ShipperName
+FROM Orders O
+LEFT JOIN Customers C ON O.CustomerID=C.CustomerID
+LEFT JOIN Shippers S ON O.ShipperID=S.ShipperID
