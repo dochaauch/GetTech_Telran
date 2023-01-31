@@ -8,3 +8,4 @@ SELECT O.OrderID, C.CustomerName, S.ShipperName
 FROM Orders O
 LEFT JOIN Customers C ON O.CustomerID=C.CustomerID
 LEFT JOIN Shippers S ON O.ShipperID=S.ShipperID
+WHERE C.Country= "USA"
