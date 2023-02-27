@@ -1,0 +1,60 @@
+//создание транзакции
+db.transactions.insertOne(
+    {
+        'id': '001',
+        'user_id': 'u001',
+        'account_id': '987654321',
+        'amount': 200.05,
+        'type': 'income',
+        'datetime':{
+            'created_at': new Date(),
+            }, 
+        }
+);
+
+
+//Получение списка транзакций для определенного счета за определенный период времени:
+db.transactions.find(
+    {
+        'account_id': '987654321',
+        'datetime.created_at': 
+            {
+                $gte: new Date("2023-01-01"),
+                $lte: new Date("2023-02-28")
+            }
+        }
+);
+
+
+//Поиск транзакции по ее ID
+db.transactions.findOne({ id: '001' });
+
+
+//Обновление статуса транзакции:
+db.transactions.updateOne(
+    { 'id': '001' }, //filter
+    { $set: 
+		{ 
+		    'status': "approved" ,
+		    'datetime.approved_at': new Date()
+		    } 
+		} //action
+);
+
+
+//Удаление транзакции
+db.transactions.deleteOne({ 'id': '002' });
+
+
+Найти все транзакции пользователя
+db.transactions.find(
+	{
+		'user_id': 'u001',
+	}, //filter
+	{
+	    'user_id':1,
+	    'amount': 1,
+	    'status': 1,
+	    '_id':0
+	} //projection
+);
