@@ -1,0 +1,168 @@
+(1) вывести размеры EURO-транзакций из ЕВРОПЫ в долларах
+//per user
+db.transactions.aggregate([
+  // Join the transactions and users tables
+  {
+    $lookup: {
+      from: "users",
+      localField: "sender_id",
+      foreignField: "id",
+      as: "user"
+    }
+  },
+  // Filter the transactions by currency and user location
+  {
+    $match: {
+      "currency": "eur",
+      "user.is_europe": true
+    }
+  },
+  // Calculate the transaction size in dollars
+  {
+    $addFields: {
+      "size_usd": { $multiply: ["$amount", 1.2] } // Assuming 1 EUR = 1.2 USD
+    }
+  },
+  // Group the transactions by user and sum the transaction sizes
+  {
+    $group: {
+      _id: "$sender_id",
+      total_size_usd: { $sum: "$size_usd" }
+    }
+  }
+]);
+
+//total
+db.transactions.aggregate([
+  // Join the transactions and users tables
+  {
+    $lookup: {
+      from: "users",
+      localField: "sender_id",
+      foreignField: "id",
+      as: "user"
+    }
+  },
+  // Filter the transactions by currency and user location
+  {
+    $match: {
+      "currency": "eur",
+      "user.is_europe": true
+    }
+  },
+  // Calculate the transaction size in dollars and sum up all the sizes
+  {
+    $group: {
+      _id: null, // Group by a constant value
+      total_size_usd: { $sum: { $multiply: ["$amount", 1.2] } } // Assuming 1 EUR = 1.2 USD
+    }
+  }
+])
+
+
+(2) вывести количество USD-транзакций из 'China'
+db.transactions.aggregate([
+  // Join the transactions and users tables
+  {
+    $lookup: {
+      from: "users",
+      localField: "sender_id",
+      foreignField: "id",
+      as: "user"
+    }
+  },
+  // Filter the transactions by currency and user location
+  {
+    $match: {
+      "currency": "usd",
+      "user.country": "China"
+    }
+  },
+  // Count the number of transactions
+  {
+    $count: "total_usd_transactions_from_china"
+  }
+])
+
+
+(3) вывести три самых больших транзакции в 'usd'
+db.transactions.aggregate([
+  // Filter the transactions by currency
+  {
+    $match: {
+      "currency": "usd"
+    }
+  },
+  // Sort the transactions by amount in descending order
+  {
+    $sort: {
+      "amount": -1
+    }
+  },
+  // Limit the results to the top three documents
+  {
+    $limit: 3
+  }
+])
+
+(4) вывести всех незаблокированных пользователей, у которых есть завершенные (is_completed) транзакции от 10 usd 
+db.users.aggregate([
+  // Join the users and transactions tables
+  {
+    $lookup: {
+      from: "transactions",
+      localField: "id",
+      foreignField: "sender_id",
+      as: "transactions"
+    }
+  },
+  // Filter the users by status and unblocked status
+  {
+    $match: {
+      "is_blocked": false,
+      "transactions.is_completed": true,
+      "transactions.currency": "usd",
+      "transactions.amount": { $gte: 10 }
+    }
+  },
+  // Project the desired fields for the output
+  {
+    $project: {
+      _id: 0,
+      id: 1,
+      fullname: 1,
+      email: 1,
+      country: 1
+    }
+  }
+])
+
+
+(5) найти пользователей без транзакций
+db.users.aggregate([
+  // Join the users and transactions tables
+  {
+    $lookup: {
+      from: "transactions",
+      localField: "id",
+      foreignField: "sender_id",
+      as: "transactions"
+    }
+  },
+  // Filter the users by those without any transactions
+  {
+    $match: {
+      "transactions": []
+    }
+  },
+  // Project the desired fields for the output
+  {
+    $project: {
+      _id: 0,
+      id: 1,
+      fullname: 1,
+      email: 1,
+      country: 1
+    }
+  }
+])
