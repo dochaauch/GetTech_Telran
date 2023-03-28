@@ -1,0 +1,125 @@
+(1) Вывести ТОП-1 стран по общей сумме пожертвований (страна + общая сумма).
+db.donations.aggregate([
+    {
+        '$lookup': {
+            'from': 'users',
+            'localField': 'donator_id',
+            'foreignField': 'id',
+            'as': 'user'
+        }
+    },
+    { '$unwind': '$user' },
+    {$group:{
+        '_id': '$user.country',
+        'total': {$sum: '$amount'}
+    }},
+    {$sort: {'total': -1}},
+    {$limit: 1}
+])
+
+
+(2) Вывести страны со средней реакцией пользователей (напр., пользователи из США имеют сред.реакцию - 4).
+db.reactions.aggregate([
+    {
+        $lookup: {
+            from: "users",
+            localField: "user_id",
+            foreignField: "id",
+            as: "user"
+        }
+    },
+    {
+        $unwind: "$user"
+    },
+    {
+        $group: {
+            _id: "$user.country",
+            average_reaction: {
+                $avg: "$value"
+            }
+        }
+    }
+])
+
+
+(3) Вывести названия стримов без пожертвований или без реакций.
+db.streams.aggregate([
+    {
+        $lookup: {
+            from: "donations",
+            localField: "id",
+            foreignField: "stream_id",
+            as: "donations"
+        }
+    },
+    {
+        $lookup: {
+            from: "reactions",
+            localField: "id",
+            foreignField: "stream_id",
+            as: "reactions"
+        }
+    },
+    {
+        $match: {
+            $or: [
+                {donations: {$size: 0}},
+                {reactions: {$size: 0}}
+            ]
+        }
+    },
+   {
+        $group: {
+            _id: "$id",
+            title: {$first: "$title"}
+        }
+    },
+    {
+        $project: {
+            _id: 0,
+            title: 1
+        }
+    }
+    
+])
+
+
+(4) Вывести максимальный размер пожертвования для каждого стримера.
+db.donations.aggregate([
+    {
+        $group: {
+            _id: "$stream_id",
+            max_donation: { $max: "$amount" }
+        }
+    },
+    {
+        $lookup: {
+            from: "streams",
+            localField: "stream_id",
+            foreignField: "stream_id",
+            as: "stream"
+        }
+    },
+    {
+        $unwind: "$stream"
+    },
+    {
+        $lookup: {
+            from: "users",
+            localField: "stream.user_id",
+            foreignField: "id",
+            as: "streamer"
+        }
+    },
+     {
+        $unwind: "$streamer"
+    },
+    {
+        $project: {
+            '_id':0,
+            'name': '$streamer.fullname',
+            'max_donation' :1
+        }
+    }
+   
+])
